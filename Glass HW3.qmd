@@ -1,0 +1,111 @@
+---
+title: "ST558 Assignment 3"
+author: "Jarrett Glass"
+format: html
+---
+
+```{r}
+#| echo: off
+load("hw2_list.rda")
+```
+
+## Task 1: Control Flow Practice
+
+1. Characterize the post-treatment (or placebo) blood pressure measurement as `optimal` ($\le 120$), `borderline` ($120 < bp \le 130$), and `high` ($> 130$). Create a new column in each data frame from above called `status`.
+
+```{r}
+bp_list$treatment['status'] <- character(20)
+bp_list$placebo['status'] <- character(10)
+```
+
+2. For the listed non-placebo data frame, create a `for` loop and use `if/then/else` logic to create the `status` column's values.
+
+```{r}
+for (i in 1:nrow(bp_list$treatment)) {
+  bp <- bp_list$treatment[i, "post_bp"]
+  if (bp <= 120) { result <- "optimal" }
+    else if (bp > 120 & bp <= 130) { result <- "borderline" }
+      else { result <- "high" }
+  bp_list$treatment[i, "status"] <- result
+}
+bp_list$treatment |> knitr::kable()
+```
+
+3. Repeat for the placebo data frame.
+
+```{r}
+for (i in 1:nrow(bp_list$placebo)) {
+  bp <- bp_list$placebo[i, "post_bp"]
+  if (bp <= 120) { result <- "optimal" }
+    else if (bp > 120 & bp <= 130) { result <- "borderline" }
+      else { result <- "high" }
+  bp_list$placebo[i, "status"] <- result
+}
+bp_list$placebo |> knitr::kable()
+```
+
+## Task 2: Function Writing
+
+Continue the previous example. 
+
+1. Write a function that
+
+    + takes in a list with two data frames in it (a `treatment` and a `placebo` data frame) as an argument. Give no default value.
+
+    + takes in an R function (that would find a sumamry of a numeric column) with the default value being set to `"mean"` (notice this is a quoted string).
+
+    + Finds the statistic of interest (as defined by the user input) for the `pre`, `post`, and `diff` columns of both data frames.
+
+        + Use `my_fun <- get(stat)` within the function to get the function from the quoted string.
+
+    + These six values should then be returned as a named list with meaningful names - this is a somewhat challenging part!
+
+        + Create a vector of names that is created dynamically based on the statistic passed, a vector with actual statistic values, and then assign `names()` to the vector. Return that.
+
+    + Apply function to the list of data frames from the previous question. Use it without specifying the statistic, then by specifying statistics `"var"`, `"sd"`, `"min"`, and `"max"`.
+
+```{r}
+# function `run_stat` takes variables `df_list` and `stat`
+run_stat <- function(df_list, stat="mean") {
+  # df_list is a list containing two separate data frames, with the same column names.
+  # Get the function that is defined in `stat` (defaults to `mean`)
+  my_fun <- get(stat)
+  
+  # Vector consisting of the columns to be tested from each data frame.
+  vars <- c("pre_bp", "post_bp", "diff_bp")
+  
+  # Create a vector with the results of the user-defined statistic on 'pre', 'post', and 'diff'
+  # columns from both data frames within the df_list variable.
+  # Running SAPPLY of the selected function on a data frame consisting of just these columns
+  # will produce vectors of the Statistic for the respective columns.
+  result <- c(
+    sapply(df_list$treatment[, vars], my_fun),
+    sapply(df_list$placebo[, vars], my_fun)
+  )
+  
+  # Create new names for these variables, based on "[treatment arm]-[stat]-[var]".
+  result_names <- c()
+  for (i in c("treatment", "placebo")) {
+    for (j in vars) {
+      result_names <- c(result_names, paste(i, stat, j, sep="-"))
+    }
+  }
+  names(result) <- result_names
+  result
+}
+
+# Running function without specifying a statistic
+run_stat(bp_list)
+
+# Running function, specifying 'var'
+run_stat(bp_list, "var")
+
+# Running function, specifying 'sd'
+run_stat(bp_list, "sd")
+
+# Running funnction, specifying "min"
+run_stat(bp_list, "min")
+
+# Running function, specifying "max"
+run_stat(bp_list, "max")
+```
