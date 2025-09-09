@@ -5,7 +5,7 @@ format: html
 ---
 
 ```{r}
-#| echo: off
+#| echo: false
 load("hw2_list.rda")
 ```
 
